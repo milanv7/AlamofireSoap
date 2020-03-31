@@ -10,22 +10,33 @@ import Alamofire
 //Soap API Request creation
 @discardableResult
 public func soapRequest 
-    (_ url: URLConvertible,
-     soapmethod : String,
-     soapparameters: Parameters? = nil,
-     namespace : String = "http://tempuri.org")
+    (_ url          : URLConvertible,
+     soapmethod     : String,
+     soapparameters : Parameters? = nil,
+     soapheaders    : HTTPHeaders? = nil,
+     namespace      : String = "http://tempuri.org")
     -> DataRequest
 {
-    
+    //Request Creation
     let soapGenerator : SoapRequestManager!
     if let parameter = soapparameters {
         soapGenerator = SoapRequestManager(methodName: soapmethod, namespace: namespace, parameters: parameter)
-    }
-    else {
+    } else {
         soapGenerator = SoapRequestManager(methodName: soapmethod, namespace: namespace)
     }
+    
     soapGenerator.generateSoapRequestElements()
-    return Session.default.request(url, method: .post, parameters: [:], encoding: soapGenerator.getBody(), headers: soapGenerator.getHeaders())
+    
+    //Header's Management
+    if let localHeaders = soapheaders {
+        var requestHeaders = soapGenerator.getHeaders()
+        localHeaders.forEach { header in
+            requestHeaders.add(header)
+        }
+        return Session.default.request(url, method: .post, parameters: [:], encoding: soapGenerator.getBody(), headers: localHeaders)
+    } else {
+        return Session.default.request(url, method: .post, parameters: [:], encoding: soapGenerator.getBody(), headers: soapGenerator.getHeaders())
+    }
 }
 
 extension String: ParameterEncoding {
